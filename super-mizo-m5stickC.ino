@@ -77,7 +77,7 @@ static struct BIRD {
 
 // pipe structure
 static struct PIPES {
-  long x, gap_y;
+  long x, w, gap_y;
   long col;
 } pipes;
 
@@ -159,9 +159,12 @@ void game_loop() {
       
       pipes.x -= SPEED;
       // if pipe reached edge of the screen reset its position and gap
-      if (pipes.x < -PIPEW) {
+      if (pipes.x < -pipes.w) {
         pipes.x = TFTW;
-        pipes.gap_y = random(70, GAMEH-(10+GAPHEIGHT));
+        pipes.w = random(PIPEW, PIPEW * 5);
+        long gap_y_max = GAMEH - (10 + GAPHEIGHT);
+        long gap_y_min = (70 - gap_y_max) / (pipes.w / PIPEW) + gap_y_max;
+        pipes.gap_y = random(gap_y_min, gap_y_max);
       }
 
       // ---------------
@@ -190,7 +193,7 @@ void game_loop() {
 #if 1
     // erase behind pipe
     if (pipes.x <= TFTW)
-     M5.Lcd.drawFastVLine(pipes.x+PIPEW, 0, GAMEH, BCKGRDCOL);
+     M5.Lcd.drawFastVLine(pipes.x+pipes.w, 0, GAMEH, BCKGRDCOL);
     // PIPECOL
 #endif
     // bird
@@ -226,13 +229,13 @@ void game_loop() {
     // ===============
     // if the bird hit the ground game over
     // checking for bird collision with pipe
-    if (bird.x+BIRDW >= pipes.x-BIRDW2 && bird.x <= pipes.x+PIPEW-BIRDW) {
+    if (bird.x+BIRDW >= pipes.x-BIRDW2 && bird.x <= pipes.x+pipes.w-BIRDW) {
       // bird entered a pipe, check for collision
       if (bird.y+BIRDH > pipes.gap_y+GAPHEIGHT) break;
       else passed_pipe = true;
     }
     // if bird has passed the pipe increase score
-    else if (bird.x > pipes.x+PIPEW-BIRDW && passed_pipe) {
+    else if (bird.x > pipes.x+pipes.w-BIRDW && passed_pipe) {
       passed_pipe = false;
       // erase score with background color
       M5.Lcd.setTextColor(BCKGRDCOL);
@@ -301,6 +304,7 @@ void game_init() {
   randomSeed(analogRead(0));
   // init pipe
   pipes.x = 0;
+  pipes.w = 0;
   pipes.gap_y = random(20, TFTH-60);
 }
 
